@@ -99,9 +99,12 @@
       this.gMarker = new google.maps.Marker(this.markerConfig);
     }
 
+    /** PlacesProvider Class */
+
     function PlacesProvider(map) {
       this.map = map;
       this.placesLib = new google.maps.places.PlacesService(map.googleMap);
+      this.bindToMap();
     }
 
     PlacesProvider.prototype.getRequest = function() {
@@ -125,29 +128,41 @@
       }
     }
     
-    PlacesProvider.prototype.listenToBoundsChange = function() {
+    PlacesProvider.prototype.bindToMap = function() {
       google.maps.event.addListener(this.map.googleMap, 'bounds_changed', function () {
         service.search();
       });
     }
+    /** END PlacesProvider */
+
+
+    /** MapDrawer **/
+    function MapDrawer(map) {
+      this.map = map;
+        var rectangle = new google.maps.Rectangle({
+          bounds: map.getBounds(),
+          editable: false
+        });
+        rectangle.setMap(map.googleMap);
+    }
+
+    MapDrawer.prototype.draw = function(){
+
+    }
+
+    /** END MapDrawer **/
+
 
     var map;
     var service;
 
     function initMap() {
       map = new Map();
-      
       service = new PlacesProvider(map);
-      service.listenToBoundsChange();
 
       /*
       google.maps.event.addListener(map.googleMap, 'bounds_changed', function(){
    // Define a rectangle and set its editable property to true.
-        var rectangle = new google.maps.Rectangle({
-          bounds: map.getBounds(),
-          editable: false
-        });
-        rectangle.setMap(map.googleMap);
 
       });
       */
