@@ -20,6 +20,8 @@ function Map() {
     });
 
     this.markers = Array();
+
+    this.infoWindow = new google.maps.InfoWindow();
 }
 
 Map.prototype.getZoom = function () {
@@ -45,10 +47,27 @@ Map.prototype.clearMarkers = function () {
     });
     this.markers = [];
 };
+
+Map.prototype.getDirections = function(from, to, onResult) {
+    var directionsRequest = {
+        destination:  {placeId: to},
+        origin: from,
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    var d = new google.maps.DirectionsService();
+    d.route(directionsRequest, onResult);
+};
+
+Map.prototype.showInfoWindow = function(content, marker) {
+    this.infoWindow.setContent(content);
+    this.infoWindow.open(this.googleMap, marker);
+}
+
 /** END OF Map Class **/
 
 
-function Marker(p) {
+function Marker(p, map) {
     this.id = p.place_id;
 
     this.place = p;
@@ -62,6 +81,17 @@ function Marker(p) {
     };
 
     this.gMarker = new google.maps.Marker(this.markerConfig);
+    var instance = this;
+    google.maps.event.addListener(this.gMarker, 'click', function(){
+
+        var template = document.querySelector("li.template").cloneNode(true);
+        template.classList.remove('template');
+        template.setAttribute('id', this.id);
+
+        html = Mustache.render(template.innerHTML, p);
+        map.showInfoWindow(html, instance.gMarker);
+    }); 
+
 };
 
 /** PlacesProvider Class */
@@ -91,10 +121,11 @@ PlacesProvider.prototype.searchWithinBounds = function (bounds, onResult) {
 };
 
 PlacesProvider.prototype.onSearchResult = function (results, status, pagination) {
+    var instance = this;
     if (status == google.maps.places.PlacesServiceStatus.OK) {
         for (var i = 0; i < results.length; i++) {
             var place = results[i];
-            var marker = new Marker(place);
+            var marker = new Marker(place, this.map);
             map.addMarker(marker);
         }
 
@@ -144,7 +175,7 @@ MapDrawer.prototype.clearList = function (place) {
 MapDrawer.prototype.addPlaceToList = function (place) {
     var template = document.querySelector("li.template").cloneNode(true);
     template.classList.remove('template');
-    template.setAttribute('id', place.id);
+    template.setAttribute('id', place.place_id);
     html = Mustache.render(template.innerHTML, place);
     template.innerHTML = html;
     this.listElement.appendChild(template);

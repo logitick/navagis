@@ -46,6 +46,16 @@
       border: none;
       border-radius: .28571429rem;
       box-shadow: 0 1px 3px 0 #d4d4d5, 0 0 0 1px #d4d4d5;
+      margin-bottom:10px;
+    }
+    div.gm-style .card {
+      margin-bottom:0px;
+      box-shadow: none;
+    }
+
+    div.gm-style .card-block {
+      border-top:none;
+      padding: 0px;
     }
 
     .card-block {
@@ -115,7 +125,7 @@
 </head>
 
 <body>
-  <div class="container-fluid">
+  <div class="container-fluid" id="page">
 
     <div class="row">
       <div class="col-md-3" style="max-height:100vh; overflow-y:scroll;">
@@ -135,7 +145,8 @@
               <li class="template">
                 <div class="card">
                   <div class="card-block">
-                    <h4 class="card-title">{{name}}</h4>
+                    <h4 class="card-title"><button type="button" class="btn btn-link directions" title="Get directions" data-place-id="{{place_id}}" data-location="{{geometry.location.lat}},{{geometry.location.lng}}"><i class=" glyphicon glyphicon-map-marker"></i></button> {{name}}</h4>
+                    
                     <div class="meta">
                       {{vicinity}}
                     </div>
@@ -146,7 +157,6 @@
                   </div>
                   <!--
                   <div class="card-footer">
-                    <span><i class=""></i>75 Friends</span>
                   </div>
                   -->
                 </div>
@@ -168,12 +178,42 @@
   <script>
     var map;
     var service;
+    var directions;
 
     function initMap() {
       map = new Map();
       service = new PlacesProvider(map);
       drawer = new MapDrawer(map, "#btnDrawOnMap", "#placesList", service);
     }
+
+    document.getElementById("page").addEventListener("click",function(e) {
+
+      if (e.target && e.target.matches(".btn.directions > *")) {
+        e.target.parentElement.click()
+      }
+
+      if (e.target && e.target.matches(".btn.directions")) {
+
+        var destination = e.target.dataset.placeId;
+        navigator.geolocation.getCurrentPosition(function(pos){
+          var origin = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+          map.getDirections(origin, destination, function(result, status) {
+
+            if (directions != undefined) {
+              directions.setMap(null);
+            }
+
+            directions = new google.maps.DirectionsRenderer(
+                {
+                    map: map.googleMap,
+                    directions:result
+                }
+            );
+          });
+        }, null, {enableHighAccuracy: true});
+      }
+    });
+
   </script>
 
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAXnvAT5xhkQNo1P5mGkJIvDlIBREfUyik&callback=initMap&libraries=places">
