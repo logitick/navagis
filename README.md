@@ -1,8 +1,8 @@
 
 - [x] Plot restaurants across Cebu
-- [ ] Each restaurant will have at least 1 food specialty
-    - [ ] Figure out how to get specialty
-- [ ] A layer panel can filter the restaurant type to show
+- [x] Each restaurant will have at least 1 food specialty
+    - [x] Figure out how to get specialty
+- [x] A layer panel can filter the restaurant type to show
 - [ ] Each restaurant can keep track of the number of customers that visited.
 - [x] Customers can get direction to the restaurant from current location.
 - [x] Draw a circle or rectangle on the map and and show the number of restaurants within the circle or rectangle.

@@ -90,20 +90,35 @@ function Marker(p, map) {
 
         html = Mustache.render(template.innerHTML, p);
         map.showInfoWindow(html, instance.gMarker);
-    }); 
+    });
 
 };
 
 /** PlacesProvider Class */
 
-function PlacesProvider(map) {
+function PlacesProvider(map, filterSelector) {
     this.map = map;
+	this.filter = document.querySelector(filterSelector);
     this.placesLib = new google.maps.places.PlacesService(map.googleMap);
     this.bindToMap();
+	var instance = this;
+	this.filter.addEventListener("keyup", function(e){
+		if (e.keyCode === 13) {
+			instance,map.clearMarkers();
+			instance.search();
+		}
+	});
+}
+
+PlacesProvider.prototype.filterSearch = function(evt) {
+	if (evt.keyCode === 13) {
+		console.log(this);
+	}
 }
 
 PlacesProvider.prototype.getRequest = function () {
     return {
+		keyword: this.filter.value,
         bounds: this.map.getBounds(),
         type: 'restaurant',
         rankBy: google.maps.places.RankBy.PROMINENCE

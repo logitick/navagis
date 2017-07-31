@@ -18,6 +18,7 @@
   <!-- Optional theme -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
     crossorigin="anonymous">
+  <link rel="stylesheet" href="awesomplete-gh-pages/awesomplete.css">
 
 
   <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -121,6 +122,10 @@
     .card .types:last-child:after {
       content: "";
     }
+	#filterDiv {
+		background:#fff;
+		padding-top:5px;
+	}
   </style>
 </head>
 
@@ -130,6 +135,30 @@
     <div class="row">
       <div class="col-md-3" style="max-height:100vh; overflow-y:scroll;">
         &nbsp
+
+        <div id="filterDiv" class="row">
+          <div class="col-md-12">
+			<div class="form-group">
+				<label for="txtSpecialty">Specialty:</label>
+				<input id="txtSpecialty" list="specialty" class="form-control awesomplete" value=""  data-autofirst="true" />
+				<datalist id="specialty">
+				  <option value="Pizza">
+				  <option value="Fast Food">
+				  <option value="Lechon">
+				  <option value="Burger">
+				  <option value="Dim Sum">
+				  <option value="Fish">
+				  <option value="Filipino">
+				  <option value="Japanese">
+				  <option value="Chicken Wings">
+				  <option value="Noodles">
+				  <option value="Deserts">
+				  <option value="Steak">
+				</datalist>
+			</div>
+          </div>
+        </div>
+
         <div class="row">
           <div class="col-md-12">
             <input class="btn btn-default btn-block" type="button" value="Draw" id="btnDrawOnMap">
@@ -146,7 +175,6 @@
                 <div class="card">
                   <div class="card-block">
                     <h4 class="card-title"><button type="button" class="btn btn-link directions" title="Get directions" data-place-id="{{place_id}}" data-location="{{geometry.location.lat}},{{geometry.location.lng}}"><i class=" glyphicon glyphicon-map-marker"></i></button> {{name}}</h4>
-                    
                     <div class="meta">
                       {{vicinity}}
                     </div>
@@ -182,8 +210,11 @@
 
     function initMap() {
       map = new Map();
-      service = new PlacesProvider(map);
+      service = new PlacesProvider(map, "#txtSpecialty");
       drawer = new MapDrawer(map, "#btnDrawOnMap", "#placesList", service);
+	  var centerControlDiv = document.getElementById("filterDiv");
+	  centerControlDiv.index = 1;
+	  map.googleMap.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
     }
 
     document.getElementById("page").addEventListener("click",function(e) {
@@ -218,6 +249,7 @@
 
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAXnvAT5xhkQNo1P5mGkJIvDlIBREfUyik&callback=initMap&libraries=places">
   </script>
+  <script src="awesomplete-gh-pages/awesomplete.min.js"></script>
 </body>
 
 </html>
