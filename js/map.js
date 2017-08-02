@@ -7,7 +7,7 @@ function RestaurantMap() {
     };
 
     this.googleMap = new google.maps.Map(document.getElementById('map'), {
-        zoom: 18,
+        zoom: 16,
         center: this.defaultLocation,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         styles: [{
@@ -154,7 +154,6 @@ PlacesProvider.prototype.onSearchResult = function (results, status, pagination)
     if (status == google.maps.places.PlacesServiceStatus.OK) {
         for (var i = 0; i < results.length; i++) {
             var place = results[i];
-
 
             var marker = new Marker(place, this.map, this.customerTracker);
             map.addMarker(marker);
