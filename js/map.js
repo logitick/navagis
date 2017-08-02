@@ -1,5 +1,5 @@
 /* Map Class */
-function Map() {
+function RestaurantMap() {
     // CEBU
     this.defaultLocation = {
         lat: 10.318667,
@@ -24,31 +24,31 @@ function Map() {
     this.infoWindow = new google.maps.InfoWindow();
 }
 
-Map.prototype.getZoom = function () {
+RestaurantMap.prototype.getZoom = function () {
     return this.googleMap.getZoom();
 };
 
-Map.prototype.getCenter = function () {
+RestaurantMap.prototype.getCenter = function () {
     return this.googleMap.getCenter();
 };
 
-Map.prototype.getBounds = function () {
+RestaurantMap.prototype.getBounds = function () {
     return this.googleMap.getBounds();
 };
 
-Map.prototype.addMarker = function (marker) {
+RestaurantMap.prototype.addMarker = function (marker) {
     this.markers.push(marker);
     marker.gMarker.setMap(this.googleMap);
 };
 
-Map.prototype.clearMarkers = function () {
+RestaurantMap.prototype.clearMarkers = function () {
     this.markers.forEach(function (marker) {
         marker.gMarker.setMap(null);
     });
     this.markers = [];
 };
 
-Map.prototype.getDirections = function(from, to, onResult) {
+RestaurantMap.prototype.getDirections = function(from, to, onResult) {
     var directionsRequest = {
         destination:  {placeId: to},
         origin: from,
@@ -59,7 +59,7 @@ Map.prototype.getDirections = function(from, to, onResult) {
     d.route(directionsRequest, onResult);
 };
 
-Map.prototype.showInfoWindow = function(content, marker) {
+RestaurantMap.prototype.showInfoWindow = function(content, marker) {
     this.infoWindow.setContent(content);
     this.infoWindow.open(this.googleMap, marker);
 }
@@ -67,8 +67,10 @@ Map.prototype.showInfoWindow = function(content, marker) {
 /** END OF Map Class **/
 
 
-function Marker(p, map) {
+function Marker(p, map, customerCounter) {
     this.id = p.place_id;
+	this.customerCounter = customerCounter;
+
 
     this.place = p;
     this.markerConfig = {
@@ -84,6 +86,8 @@ function Marker(p, map) {
     var instance = this;
     google.maps.event.addListener(this.gMarker, 'click', function(){
 
+		p.visitors = customerCounter.getCustomerCount(p.place_id);
+
         var template = document.querySelector("li.template").cloneNode(true);
         template.classList.remove('template');
         template.setAttribute('id', this.id);
@@ -92,13 +96,22 @@ function Marker(p, map) {
         map.showInfoWindow(html, instance.gMarker);
     });
 
+	// when a visitor is added
+	this.customerCounter.addListener(function(placeId) {
+		if (placeId === p.place_id) {
+			new google.maps.event.trigger( instance.gMarker, 'click' );
+		}
+	});
+
 };
 
 /** PlacesProvider Class */
 
-function PlacesProvider(map, filterSelector) {
+function PlacesProvider(map, filterSelector, customerCounter) {
     this.map = map;
 	this.filter = document.querySelector(filterSelector);
+	this.customerCounter = customerCounter;
+
     this.placesLib = new google.maps.places.PlacesService(map.googleMap);
     this.bindToMap();
 	var instance = this;
@@ -106,6 +119,7 @@ function PlacesProvider(map, filterSelector) {
 		if (e.keyCode === 13) {
 			instance,map.clearMarkers();
 			instance.search();
+			instance.customerCounter.removeListeners();
 		}
 	});
 }
@@ -140,7 +154,9 @@ PlacesProvider.prototype.onSearchResult = function (results, status, pagination)
     if (status == google.maps.places.PlacesServiceStatus.OK) {
         for (var i = 0; i < results.length; i++) {
             var place = results[i];
-            var marker = new Marker(place, this.map);
+
+
+            var marker = new Marker(place, this.map, this.customerTracker);
             map.addMarker(marker);
         }
 
@@ -245,3 +261,47 @@ MapDrawer.prototype.bindToMap = function (e) {
 };
 
 /** END MapDrawer **/
+
+function CustomerTracker(selector) {
+	this.table = new Map();
+	this.listeners = [];
+
+	var instance = this;
+    document.getElementById("page").addEventListener("click",function(e) {
+
+      if (e.target && e.target.matches(selector + "> a > *")) {
+        e.target.parentElement.click();
+      }
+
+      if (e.target && e.target.matches(selector + "> a")) {
+		  var placeId = e.target.dataset.placeId;
+		  instance.incrementCustomerCount(placeId);
+      }
+	});
+}
+
+CustomerTracker.prototype.addListener = function(listener) {
+	this.listeners.push(listener);
+}
+
+CustomerTracker.prototype.removeListeners = function() {
+	this.listeners = [];
+}
+
+CustomerTracker.prototype.incrementCustomerCount = function(placeId) {
+	if (this.table.get(placeId) === undefined) {
+		this.table.set(placeId, 0);
+	}
+	var counter = this.table.get(placeId);
+	this.table.set(placeId, ++counter);
+	this.listeners.forEach(function(listener, index) {
+		listener(placeId);
+	});
+}
+
+CustomerTracker.prototype.getCustomerCount = function (placeId) {
+	if (this.table.get(placeId) === undefined) {
+		this.table.set(placeId, 0);
+	}
+	return this.table.get(placeId);
+}

@@ -9,7 +9,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>Starter Template for Bootstrap</title>
+  <title>Navagis Map exam</title>
 
   <!-- Latest compiled and minified CSS -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
@@ -183,10 +183,9 @@
                       <a href="#" class="types">{{.}}</a> {{/types}}
                     </div>
                   </div>
-                  <!--
                   <div class="card-footer">
+					  <span class="customer-tracker"><i class="glyphicon glyphicon-user" title="Customer Visits"></i> <span class="customer-counter">{{visitors}}</span> <a href="javascript:;" data-place-id="{{place_id}}" ><i class="glyphicon glyphicon-plus"></i></a></span>
                   </div>
-                  -->
                 </div>
               </li>
               <ul>
@@ -207,14 +206,18 @@
     var map;
     var service;
     var directions;
+	var customerTracker;
 
     function initMap() {
-      map = new Map();
-      service = new PlacesProvider(map, "#txtSpecialty");
+      map = new RestaurantMap();
+	  customerTracker = new CustomerTracker(".customer-tracker");
+      service = new PlacesProvider(map, "#txtSpecialty", customerTracker);
       drawer = new MapDrawer(map, "#btnDrawOnMap", "#placesList", service);
 	  var centerControlDiv = document.getElementById("filterDiv");
 	  centerControlDiv.index = 1;
 	  map.googleMap.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
+
+
     }
 
     document.getElementById("page").addEventListener("click",function(e) {
