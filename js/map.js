@@ -36,6 +36,17 @@ RestaurantMap.prototype.getBounds = function () {
     return this.googleMap.getBounds();
 };
 
+RestaurantMap.prototype.showMarkersMatchingFilters = function() {
+	var keywords = filterListener.getFilters();
+    this.markers.forEach(function (marker) {
+		if (keywords.indexOf(marker.keyword) > -1) {
+			marker.gMarker.setVisible(true);
+		} else {
+			marker.gMarker.setVisible(false);
+		}
+    });
+}
+
 RestaurantMap.prototype.addMarker = function (marker) {
     this.markers.push(marker);
     marker.gMarker.setMap(this.googleMap);
@@ -67,10 +78,11 @@ RestaurantMap.prototype.showInfoWindow = function(content, marker) {
 /** END OF Map Class **/
 
 
-function Marker(p, map, customerCounter) {
+function Marker(p, map, customerCounter, keyword) {
+
     this.id = p.place_id;
 	this.customerCounter = customerCounter;
-
+	this.keyword = keyword;
 
     this.place = p;
     this.markerConfig = {
@@ -107,56 +119,62 @@ function Marker(p, map, customerCounter) {
 
 /** PlacesProvider Class */
 
-function PlacesProvider(map, filterSelector, customerCounter) {
+function PlacesProvider(map, customerCounter, filterListener) {
     this.map = map;
-	this.filter = document.querySelector(filterSelector);
 	this.customerCounter = customerCounter;
+	this.filtersArray = filterListener.getFilters();;
+	var instance = this;
+
+	filterListener.onFilterChangeListener = function(f) {
+		instance.setFilters(f);
+	}
 
     this.placesLib = new google.maps.places.PlacesService(map.googleMap);
     this.bindToMap();
-	var instance = this;
-	this.filter.addEventListener("keyup", function(e){
-		if (e.keyCode === 13) {
-			instance,map.clearMarkers();
-			instance.search();
-			instance.customerCounter.removeListeners();
-		}
-	});
 }
 
-PlacesProvider.prototype.filterSearch = function(evt) {
-	if (evt.keyCode === 13) {
-		console.log(this);
-	}
-}
-
-PlacesProvider.prototype.getRequest = function () {
+PlacesProvider.prototype.getRequest = function (filterKeyword) {
     return {
-		keyword: this.filter.value,
-        bounds: this.map.getBounds(),
+		bounds: this.map.getBounds(),
+		keyword: filterKeyword,
         type: 'restaurant',
         rankBy: google.maps.places.RankBy.PROMINENCE
     };
 };
 
+PlacesProvider.prototype.setFilters = function(filtersArray) {
+	this.filtersArray = filtersArray;
+	this,map.clearMarkers();
+	this.search();
+	this.customerCounter.removeListeners();
+};
+
 PlacesProvider.prototype.search = function () {
-    this.placesLib.nearbySearch(this.getRequest(), this.onSearchResult);
+	var instance = this;
+	this.searchWithinBounds(this.map.getBounds(), this.onSearchResult);
 };
 
 PlacesProvider.prototype.searchWithinBounds = function (bounds, onResult) {
-    var request = this.getRequest();
-    request.bounds = bounds;
-    this.placesLib.nearbySearch(request, onResult);
+	var instance = this;
+	this.filtersArray.forEach(function(keyword){
+		var request = instance.getRequest(keyword);
+		request.bounds = bounds;
+    	instance.placesLib.nearbySearch(request, function(results, status, pagination){
+			onResult(results, status, pagination, keyword);
+		});
+
+	});
+
 };
 
-PlacesProvider.prototype.onSearchResult = function (results, status, pagination) {
-    var instance = this;
+PlacesProvider.prototype.onSearchResult = function (results, status, pagination, keyword) {
     if (status == google.maps.places.PlacesServiceStatus.OK) {
+
         for (var i = 0; i < results.length; i++) {
             var place = results[i];
-
-            var marker = new Marker(place, this.map, this.customerTracker);
+            var marker = new Marker(place, this.map, this.customerTracker, keyword);
             map.addMarker(marker);
+			map.showMarkersMatchingFilters();
         }
 
         if (pagination.hasNextPage) {
@@ -303,4 +321,30 @@ CustomerTracker.prototype.getCustomerCount = function (placeId) {
 		this.table.set(placeId, 0);
 	}
 	return this.table.get(placeId);
+}
+
+function FilterListener (filterSelector) {
+	this.filterSelector = filterSelector;
+	this.filterFields = document.querySelectorAll(filterSelector);
+	this.onFilterChangeListener;
+
+	var instance = this;
+
+	document.getElementById("page").addEventListener("click",function(e) {
+		if (instance.onFilterChangeListener !== undefined) {
+			if (e.target && e.target.matches(filterSelector)) {
+				instance.onFilterChangeListener(instance.getFilters());
+			}
+		}
+	});
+}
+
+FilterListener.prototype.getFilters = function() {
+	var filters = [];
+	this.filterFields.forEach(function(f){
+		if (f.checked) {
+			filters.push(f.value);
+		}
+	});
+	return filters;
 }

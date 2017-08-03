@@ -139,31 +139,44 @@
 
     <div class="row">
       <div class="col-md-3" style="max-height:100vh; overflow-y:scroll;">
-        &nbsp
-
-        <div id="filterDiv" class="row">
-          <div class="col-md-12">
+		<div>
 			<div class="form-group">
-				<label for="txtSpecialty">Specialty:</label>
-				<input id="txtSpecialty" list="specialty" class="form-control awesomplete" value=""  data-autofirst="true" />
-				<datalist id="specialty">
-				  <option value="Pizza">
-				  <option value="Fast Food">
-				  <option value="Lechon">
-				  <option value="Burger">
-				  <option value="Dim Sum">
-				  <option value="Fish">
-				  <option value="Filipino">
-				  <option value="Japanese">
-				  <option value="Chicken Wings">
-				  <option value="Noodles">
-				  <option value="Deserts">
-				  <option value="Steak">
-				</datalist>
-			</div>
-          </div>
-        </div>
+				<div class="col-sm-offset-2 col-sm-10">
+					<h3>Filters</h3>
+				  <div class="checkbox filter">
+					<label>
+					  <input type="checkbox" checked="checked" value="Pizza"> Pizza
+					</label>
+				  </div>
 
+				  <div class="checkbox filter">
+					<label>
+					  <input type="checkbox" checked="checked" value="Steak"> Steak
+					</label>
+				  </div>
+
+				  <div class="checkbox filter">
+					<label>
+					  <input type="checkbox" checked="checked" value="Lechon"> Lechon
+					</label>
+				  </div>
+
+				  <div class="checkbox filter">
+					<label>
+					  <input type="checkbox" checked="checked" value="Dim Sum"> Dim Sum
+					</label>
+				  </div>
+
+				  <div class="checkbox filter">
+					<label>
+					  <input type="checkbox" checked="checked" value="Burger"> Burger
+					</label>
+				  </div>
+
+				</div>
+			</div>
+
+		</div>
         <div class="row">
           <div class="col-md-12">
             <input class="btn btn-default btn-block" type="button" value="Draw" id="btnDrawOnMap">
@@ -212,17 +225,15 @@
     var service;
     var directions;
 	var customerTracker;
+	var filterListener;
+
 
     function initMap() {
       map = new RestaurantMap();
 	  customerTracker = new CustomerTracker(".customer-tracker");
-      service = new PlacesProvider(map, "#txtSpecialty", customerTracker);
+	  filterListener = new FilterListener(".filter.checkbox input");
+      service = new PlacesProvider(map, customerTracker, filterListener);
       drawer = new MapDrawer(map, "#btnDrawOnMap", "#placesList", service);
-	  var centerControlDiv = document.getElementById("filterDiv");
-	  centerControlDiv.index = 1;
-	  map.googleMap.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
-
-
     }
 
     document.getElementById("page").addEventListener("click",function(e) {
