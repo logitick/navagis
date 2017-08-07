@@ -36,14 +36,14 @@ RestaurantMap.prototype.getBounds = function () {
     return this.googleMap.getBounds();
 };
 
-RestaurantMap.prototype.showMarkersMatchingFilters = function() {
-	var keywords = filterListener.getFilters();
+RestaurantMap.prototype.showMarkersMatchingFilters = function () {
+    var keywords = filterListener.getFilters();
     this.markers.forEach(function (marker) {
-		if (keywords.indexOf(marker.keyword) > -1) {
-			marker.gMarker.setVisible(true);
-		} else {
-			marker.gMarker.setVisible(false);
-		}
+        if (keywords.indexOf(marker.keyword) > -1) {
+            marker.gMarker.setVisible(true);
+        } else {
+            marker.gMarker.setVisible(false);
+        }
     });
 }
 
@@ -59,9 +59,9 @@ RestaurantMap.prototype.clearMarkers = function () {
     this.markers = [];
 };
 
-RestaurantMap.prototype.getDirections = function(from, to, onResult) {
+RestaurantMap.prototype.getDirections = function (from, to, onResult) {
     var directionsRequest = {
-        destination:  {placeId: to},
+        destination: { placeId: to },
         origin: from,
         travelMode: google.maps.TravelMode.DRIVING
     };
@@ -70,7 +70,7 @@ RestaurantMap.prototype.getDirections = function(from, to, onResult) {
     d.route(directionsRequest, onResult);
 };
 
-RestaurantMap.prototype.showInfoWindow = function(content, marker) {
+RestaurantMap.prototype.showInfoWindow = function (content, marker) {
     this.infoWindow.setContent(content);
     this.infoWindow.open(this.googleMap, marker);
 }
@@ -81,8 +81,8 @@ RestaurantMap.prototype.showInfoWindow = function(content, marker) {
 function Marker(p, map, customerCounter, keyword) {
 
     this.id = p.place_id;
-	this.customerCounter = customerCounter;
-	this.keyword = keyword;
+    this.customerCounter = customerCounter;
+    this.keyword = keyword;
 
     this.place = p;
     this.markerConfig = {
@@ -96,9 +96,9 @@ function Marker(p, map, customerCounter, keyword) {
 
     this.gMarker = new google.maps.Marker(this.markerConfig);
     var instance = this;
-    google.maps.event.addListener(this.gMarker, 'click', function(){
+    google.maps.event.addListener(this.gMarker, 'click', function () {
 
-		p.visitors = customerCounter.getCustomerCount(p.place_id);
+        p.visitors = customerCounter.getCustomerCount(p.place_id);
 
         var template = document.querySelector("li.template").cloneNode(true);
         template.classList.remove('template');
@@ -108,26 +108,37 @@ function Marker(p, map, customerCounter, keyword) {
         map.showInfoWindow(html, instance.gMarker);
     });
 
-	// when a visitor is added
-	this.customerCounter.addListener(function(placeId) {
-		if (placeId === p.place_id) {
-			new google.maps.event.trigger( instance.gMarker, 'click' );
-		}
-	});
+    // when a visitor is added
+    this.customerCounter.addListener(function (placeId) {
+        if (placeId === p.place_id) {
+            new google.maps.event.trigger(instance.gMarker, 'click');
+        }
+    });
 
+};
+
+Marker.prototype.getWeightedLocation = function() {
+    var weightedLocation = {};
+    weightedLocation.location = this.gMarker.getPosition();
+    weightedLocation.weight = this.customerCounter.getCustomerCount();
+    return weightedLocation;
+};
+
+Marker.prototype.getCustomerCount = function()  {
+    return this.customerCounter.getCustomerCount(this.id);
 };
 
 /** PlacesProvider Class */
 
 function PlacesProvider(map, customerCounter, filterListener) {
     this.map = map;
-	this.customerCounter = customerCounter;
-	this.filtersArray = filterListener.getFilters();;
-	var instance = this;
+    this.customerCounter = customerCounter;
+    this.filtersArray = filterListener.getFilters();;
+    var instance = this;
 
-	filterListener.onFilterChangeListener = function(f) {
-		instance.setFilters(f);
-	}
+    filterListener.onFilterChangeListener = function (f) {
+        instance.setFilters(f);
+    }
 
     this.placesLib = new google.maps.places.PlacesService(map.googleMap);
     this.bindToMap();
@@ -135,35 +146,38 @@ function PlacesProvider(map, customerCounter, filterListener) {
 
 PlacesProvider.prototype.getRequest = function (filterKeyword) {
     return {
-		bounds: this.map.getBounds(),
-		keyword: filterKeyword,
+        bounds: this.map.getBounds(),
+        keyword: filterKeyword,
         type: 'restaurant',
         rankBy: google.maps.places.RankBy.PROMINENCE
     };
 };
 
-PlacesProvider.prototype.setFilters = function(filtersArray) {
-	this.filtersArray = filtersArray;
-	this,map.clearMarkers();
-	this.search();
-	this.customerCounter.removeListeners();
+PlacesProvider.prototype.setFilters = function (filtersArray) {
+    this.filtersArray = filtersArray;
+    this, map.clearMarkers();
+    this.search();
+    this.customerCounter.removeListeners();
+    if (this.filtersArray.length < 1) {
+        heatMap.refresh();
+    }
 };
 
 PlacesProvider.prototype.search = function () {
-	var instance = this;
-	this.searchWithinBounds(this.map.getBounds(), this.onSearchResult);
+    var instance = this;
+    this.searchWithinBounds(this.map.getBounds(), this.onSearchResult);
 };
 
 PlacesProvider.prototype.searchWithinBounds = function (bounds, onResult) {
-	var instance = this;
-	this.filtersArray.forEach(function(keyword){
-		var request = instance.getRequest(keyword);
-		request.bounds = bounds;
-    	instance.placesLib.nearbySearch(request, function(results, status, pagination){
-			onResult(results, status, pagination, keyword);
-		});
+    var instance = this;
+    this.filtersArray.forEach(function (keyword) {
+        var request = instance.getRequest(keyword);
+        request.bounds = bounds;
+        instance.placesLib.nearbySearch(request, function (results, status, pagination) {
+            onResult(results, status, pagination, keyword);
+        });
 
-	});
+    });
 
 };
 
@@ -174,11 +188,15 @@ PlacesProvider.prototype.onSearchResult = function (results, status, pagination,
             var place = results[i];
             var marker = new Marker(place, this.map, this.customerTracker, keyword);
             map.addMarker(marker);
-			map.showMarkersMatchingFilters();
+            map.showMarkersMatchingFilters();
         }
 
         if (pagination.hasNextPage) {
             pagination.nextPage();
+        } else {
+            if (heatMap.isVisible()) {
+                heatMap.refresh();
+            }
         }
     }
 };
@@ -280,71 +298,119 @@ MapDrawer.prototype.bindToMap = function (e) {
 /** END MapDrawer **/
 
 function CustomerTracker(selector) {
-	this.table = new Map();
-	this.listeners = [];
+    this.table = new Map();
+    this.listeners = [];
 
-	var instance = this;
-    document.getElementById("page").addEventListener("click",function(e) {
+    var instance = this;
+    document.getElementById("page").addEventListener("click", function (e) {
 
-      if (e.target && e.target.matches(selector + "> a > *")) {
-        e.target.parentElement.click();
-      }
+        if (e.target && e.target.matches(selector + "> a > *")) {
+            e.target.parentElement.click();
+        }
 
-      if (e.target && e.target.matches(selector + "> a")) {
-		  var placeId = e.target.dataset.placeId;
-		  instance.incrementCustomerCount(placeId);
-      }
-	});
+        if (e.target && e.target.matches(selector + "> a")) {
+            var placeId = e.target.dataset.placeId;
+            instance.incrementCustomerCount(placeId);
+        }
+    });
 }
 
-CustomerTracker.prototype.addListener = function(listener) {
-	this.listeners.push(listener);
+CustomerTracker.prototype.addListener = function (listener) {
+    this.listeners.push(listener);
 }
 
-CustomerTracker.prototype.removeListeners = function() {
-	this.listeners = [];
+CustomerTracker.prototype.removeListeners = function () {
+    this.listeners = [];
 }
 
-CustomerTracker.prototype.incrementCustomerCount = function(placeId) {
-	if (this.table.get(placeId) === undefined) {
-		this.table.set(placeId, 0);
-	}
-	var counter = this.table.get(placeId);
-	this.table.set(placeId, ++counter);
-	this.listeners.forEach(function(listener, index) {
-		listener(placeId);
-	});
+CustomerTracker.prototype.incrementCustomerCount = function (placeId) {
+    if (this.table.get(placeId) === undefined) {
+        this.table.set(placeId, 0);
+    }
+    var counter = this.table.get(placeId);
+    this.table.set(placeId, ++counter);
+    this.listeners.forEach(function (listener, index) {
+        listener(placeId);
+    });
 }
 
 CustomerTracker.prototype.getCustomerCount = function (placeId) {
-	if (this.table.get(placeId) === undefined) {
-		this.table.set(placeId, 0);
-	}
-	return this.table.get(placeId);
+    if (this.table.get(placeId) === undefined) {
+        this.table.set(placeId, 0);
+    }
+    return this.table.get(placeId);
 }
 
-function FilterListener (filterSelector) {
-	this.filterSelector = filterSelector;
-	this.filterFields = document.querySelectorAll(filterSelector);
-	this.onFilterChangeListener;
+function FilterListener(filterSelector) {
+    this.filterSelector = filterSelector;
+    this.filterFields = document.querySelectorAll(filterSelector);
+    this.onFilterChangeListener;
 
-	var instance = this;
+    var instance = this;
 
-	document.getElementById("page").addEventListener("click",function(e) {
-		if (instance.onFilterChangeListener !== undefined) {
-			if (e.target && e.target.matches(filterSelector)) {
-				instance.onFilterChangeListener(instance.getFilters());
-			}
-		}
-	});
+    document.getElementById("page").addEventListener("click", function (e) {
+        if (instance.onFilterChangeListener !== undefined) {
+            if (e.target && e.target.matches(filterSelector)) {
+                instance.onFilterChangeListener(instance.getFilters());
+            }
+        }
+    });
 }
 
-FilterListener.prototype.getFilters = function() {
-	var filters = [];
-	this.filterFields.forEach(function(f){
-		if (f.checked) {
-			filters.push(f.value);
-		}
-	});
-	return filters;
+FilterListener.prototype.getFilters = function () {
+    var filters = [];
+    this.filterFields.forEach(function (f) {
+        if (f.checked) {
+            filters.push(f.value);
+        }
+    });
+    return filters;
 }
+
+function HeatMap (map) {
+    this.map = map;
+    this.layer = new google.maps.visualization.HeatmapLayer({
+        map: this.map.googleMap,
+        data: this.getPoints(),
+        radius: 50
+    });
+    this.hide();
+}
+
+HeatMap.prototype.isVisible = function () {
+    return this.layer.getMap() !== null;
+};
+
+
+HeatMap.prototype.show = function () {
+    this.layer.setMap(this.map.googleMap);
+};
+
+HeatMap.prototype.hide = function () {
+    this.layer.setMap(null);
+};
+
+HeatMap.prototype.refresh = function () {
+    var p = this.getPoints();
+    this.layer.setData(this.getPoints());
+};
+
+HeatMap.prototype.getPoints = function () {
+    var points = [];
+    var markers = this.getMapMarkers();
+    var instance = this;
+    markers.forEach(function(marker){
+        var weightedLocation = instance.getWeightedLocation(marker);
+        points.push(weightedLocation);
+    });
+    return points;
+}
+
+HeatMap.prototype.getMapMarkers = function() {
+    return this.map.markers;
+};
+
+HeatMap.prototype.getWeightedLocation = function(marker) {
+    return marker.getWeightedLocation();
+};
+

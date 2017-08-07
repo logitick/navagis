@@ -47,15 +47,16 @@
       border: none;
       border-radius: .28571429rem;
       box-shadow: 0 1px 3px 0 #d4d4d5, 0 0 0 1px #d4d4d5;
-      margin-bottom:10px;
+      margin-bottom: 10px;
     }
+
     div.gm-style .card {
-      margin-bottom:0px;
+      margin-bottom: 0px;
       box-shadow: none;
     }
 
     div.gm-style .card-block {
-      border-top:none;
+      border-top: none;
       padding: 0px;
     }
 
@@ -85,9 +86,9 @@
       font-weight: 700;
     }
 
-	ul#placesList .card-footer {
-		display:none;
-	}
+    ul#placesList .card-footer {
+      display: none;
+    }
 
     .card-footer {
       font-size: 1em;
@@ -98,7 +99,7 @@
       padding: .75em 1em;
       color: rgba(0, 0, 0, .4);
       border-top: 1px solid rgba(0, 0, 0, .05) !important;
-	  margin-top:5px;
+      margin-top: 5px;
       background: #fff;
     }
 
@@ -127,10 +128,11 @@
     .card .types:last-child:after {
       content: "";
     }
-	#filterDiv {
-		background:#fff;
-		padding-top:5px;
-	}
+
+    #filterDiv {
+      background: #fff;
+      padding-top: 5px;
+    }
   </style>
 </head>
 
@@ -139,44 +141,57 @@
 
     <div class="row">
       <div class="col-md-3" style="max-height:100vh; overflow-y:scroll;">
-		<div>
-			<div class="form-group">
-				<div class="col-sm-offset-2 col-sm-10">
-					<h3>Filters</h3>
-				  <div class="checkbox filter">
-					<label>
+
+        <div>
+
+          <div class="form-group">
+            <div class="col-sm-12">
+              <h3>Layers:</h3>
+              <div class="checkbox">
+                <label><input type="checkbox" data-heatmap> Show restaurants density heatmap</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="form-group">
+            <div class="col-sm-12">
+              <h3>Filters</h3>
+              <div class="checkbox filter">
+                <label>
 					  <input type="checkbox" checked="checked" value="Pizza"> Pizza
 					</label>
-				  </div>
+              </div>
 
-				  <div class="checkbox filter">
-					<label>
+              <div class="checkbox filter">
+                <label>
 					  <input type="checkbox" checked="checked" value="Steak"> Steak
 					</label>
-				  </div>
+              </div>
 
-				  <div class="checkbox filter">
-					<label>
+              <div class="checkbox filter">
+                <label>
 					  <input type="checkbox" checked="checked" value="Lechon"> Lechon
 					</label>
-				  </div>
+              </div>
 
-				  <div class="checkbox filter">
-					<label>
+              <div class="checkbox filter">
+                <label>
 					  <input type="checkbox" checked="checked" value="Dim Sum"> Dim Sum
 					</label>
-				  </div>
+              </div>
 
-				  <div class="checkbox filter">
-					<label>
+              <div class="checkbox filter">
+                <label>
 					  <input type="checkbox" checked="checked" value="Burger"> Burger
 					</label>
-				  </div>
+              </div>
 
-				</div>
-			</div>
+            </div>
+          </div>
 
-		</div>
+        </div>
         <div class="row">
           <div class="col-md-12">
             <input class="btn btn-default btn-block" type="button" value="Draw" id="btnDrawOnMap">
@@ -192,7 +207,8 @@
               <li class="template">
                 <div class="card">
                   <div class="card-block">
-                    <h4 class="card-title"><button type="button" class="btn btn-link directions" title="Get directions" data-place-id="{{place_id}}" data-location="{{geometry.location.lat}},{{geometry.location.lng}}"><i class=" glyphicon glyphicon-map-marker"></i></button> {{name}}</h4>
+                    <h4 class="card-title"><button type="button" class="btn btn-link directions" title="Get directions" data-place-id="{{place_id}}"
+                        data-location="{{geometry.location.lat}},{{geometry.location.lng}}"><i class=" glyphicon glyphicon-map-marker"></i></button>                      {{name}}</h4>
                     <div class="meta">
                       {{vicinity}}
                     </div>
@@ -202,7 +218,7 @@
                     </div>
                   </div>
                   <div class="card-footer">
-					  <span class="customer-tracker"><i class="glyphicon glyphicon-user" title="Customer Visits"></i> <span class="customer-counter">{{visitors}}</span> <a href="javascript:;" data-place-id="{{place_id}}" ><i class="glyphicon glyphicon-plus"></i></a></span>
+                    <span class="customer-tracker"><i class="glyphicon glyphicon-user" title="Customer Visits"></i> <span class="customer-counter">{{visitors}}</span>                    <a href="javascript:;" data-place-id="{{place_id}}"><i class="glyphicon glyphicon-plus"></i></a></span>
                   </div>
                 </div>
               </li>
@@ -224,49 +240,65 @@
     var map;
     var service;
     var directions;
-	var customerTracker;
-	var filterListener;
+    var customerTracker;
+    var filterListener;
+    var heatMap;
 
 
     function initMap() {
       map = new RestaurantMap();
-	  customerTracker = new CustomerTracker(".customer-tracker");
-	  filterListener = new FilterListener(".filter.checkbox input");
+      customerTracker = new CustomerTracker(".customer-tracker");
+      filterListener = new FilterListener(".filter.checkbox input");
       service = new PlacesProvider(map, customerTracker, filterListener);
       drawer = new MapDrawer(map, "#btnDrawOnMap", "#placesList", service);
+      heatMap = new HeatMap(map);
+
+      if (document.querySelector("input[data-heatmap]").checked) {
+        google.maps.event.addListenerOnce(this.map.googleMap, 'bounds_changed', function () {
+          heatMap.refresh();
+          heatMap.show();
+        });
+      }
     }
 
-    document.getElementById("page").addEventListener("click",function(e) {
+    document.querySelector("input[data-heatmap]").onchange = function() {
+        if (this.checked) {
+          heatMap.show();
+        } else {
+          heatMap.hide();
+        }
+    };
+
+    document.getElementById("page").addEventListener("click", function (e) {
 
       if (e.target && e.target.matches(".btn.directions > *")) {
         e.target.parentElement.click()
       }
 
       if (e.target && e.target.matches(".btn.directions")) {
-
         var destination = e.target.dataset.placeId;
-        navigator.geolocation.getCurrentPosition(function(pos){
+        navigator.geolocation.getCurrentPosition(function (pos) {
           var origin = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-          map.getDirections(origin, destination, function(result, status) {
+          map.getDirections(origin, destination, function (result, status) {
 
             if (directions != undefined) {
               directions.setMap(null);
             }
 
             directions = new google.maps.DirectionsRenderer(
-                {
-                    map: map.googleMap,
-                    directions:result
-                }
+              {
+                map: map.googleMap,
+                directions: result
+              }
             );
           });
-        }, null, {enableHighAccuracy: true});
+        }, null, { enableHighAccuracy: true });
       }
     });
-
   </script>
 
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAXnvAT5xhkQNo1P5mGkJIvDlIBREfUyik&callback=initMap&libraries=places">
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAXnvAT5xhkQNo1P5mGkJIvDlIBREfUyik&callback=initMap&libraries=places,visualization">
+
   </script>
   <script src="awesomplete-gh-pages/awesomplete.min.js"></script>
 </body>
